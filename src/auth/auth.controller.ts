@@ -1,17 +1,19 @@
 /* eslint-disable prettier/prettier */
 import { Logger, Controller } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Post } from '@nestjs/common/decorators';
+import { Body, Post } from '@nestjs/common/decorators';
+import { UserRequestRegister } from 'src/types';
+import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
-  constructor(private authService: AuthService) {}
+  constructor(private userService: UserService) {}
 
   @Post('signup')
-  signup() {
-    // this.logger.log('[SINGUP]');
-    return 'SIGN UP';
+  async signup(@Body() createUserDto: UserRequestRegister) {
+    this.logger.log(`[SIGNUP], Start SIGN UP`);
+    return this.userService.createUser(createUserDto);
   }
 
   @Post('signin')

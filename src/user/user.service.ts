@@ -1,6 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User, Prisma } from '@prisma/client';
+import { UserRequestRegister } from 'src/types';
+import { emailIsValid } from 'src/utils/validate';
+import { hashPassword } from 'src/utils/hash.password';
+import _ from 'lodash';
 
 @Injectable()
 export class UserService {
@@ -30,13 +34,73 @@ export class UserService {
   }
 
   //CREATE USER
-  async createUser(data: Prisma.UserCreateInput): Promise<User> {
+  async createUser(data: UserRequestRegister): Promise<User> {
     this.logger.log(`[createUser] data: ${JSON.stringify(data)}`);
-    
-    const user = await this.prismaService.user.create({
-      data,
+
+    const { password, email, firstName, lastName } = data;
+
+    // check valid email
+    if (!emailIsValid(email)) {
+      throw new HttpException(
+        {
+          reason: 'Invalid email',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // check if user already exists
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email: email,
+      },
     });
-    return user;
+
+    if (user) {
+      throw new HttpException(
+        {
+          reason: 'User already exists',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!password || password.length < 8) {
+      throw new HttpException('Invalid password', HttpStatus.BAD_REQUEST);
+    }
+
+    // encrypt the password
+    const newPassword = await hashPassword(password);
+    this.logger.log(`[createUser] password: ${newPassword}`);
+
+    const newUser = await this.prismaService.user.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+      },
+    });
+
+    this.logger.log(`[createUSER] ${JSON.stringify(newUser)}`);
+
+    const getNewUsers = await this.prismaService.user.findFirst({
+      where: { email },
+    });
+
+    this.logger.log(`[createUser] newUser: ${JSON.stringify(getNewUsers)}`);
+
+    const userCredentials = await this.prismaService.userCredentials.create({
+      data: {
+        userId: getNewUsers.id,
+        password: newPassword,
+      },
+    });
+
+    this.logger.log(
+      `[createUser] userCredentials: ${JSON.stringify(userCredentials)}`,
+    );
+
+    return newUser;
   }
 
   // UPDATE USER
