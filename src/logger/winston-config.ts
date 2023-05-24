@@ -49,3 +49,4 @@ export const getWinstonLogger = () => {
   const logger: Logger = createLogger(WINSTON_LOGGER_OPTIONS);
   return logger;
 };
+

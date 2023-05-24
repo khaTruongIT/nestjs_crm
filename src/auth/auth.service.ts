@@ -1,16 +1,49 @@
-import { Logger, Injectable } from '@nestjs/common';
+import { Logger, Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { sign } from 'crypto';
+import { UserProfile, securityId } from 'src/types';
+import { TokenConstants } from 'src/user/constants';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  constructor(private userService: UserService) {}
 
-  login() {
-    // this.logger.log('[LOGIN], Start function login');
-  }
+  constructor(private userService: UserService, private jwtService: JwtService) {}
 
-  signup() {
-    // this.logger.log('[SIGNUP], Start function signup');
+  // generate token
+  async generateToken(userProfile: UserProfile) {
+    this.logger.log(
+      `[generateToken] userProfile: ${JSON.stringify(userProfile)}`,
+    );
+
+    // check user profile
+    if (!userProfile) {
+      throw new HttpException(
+        'Error generating token : userProfile is null',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const { email, lastName, firstName } = userProfile;
+
+    const userProfileForToken = {
+      id: userProfile[securityId],
+      email,
+      name: `${firstName} ${lastName}`,
+    };
+    let token: string;
+   
+    try {
+      token = await this.jwtService.sign(userProfileForToken, {
+        secret: TokenConstants.TOKEN_SECRET_VALUE,
+        expiresIn: TokenConstants.TOKEN_EXPIRES_IN_VALUE
+      })
+
+    } catch (err) {
+      this.logger.error(`[generateToken] Error: ${JSON.stringify(err)}`)
+      return err
+    }
+    return token
   }
 }

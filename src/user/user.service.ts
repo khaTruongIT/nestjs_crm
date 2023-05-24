@@ -1,10 +1,15 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User, Prisma } from '@prisma/client';
-import { UserRequestRegister } from 'src/types';
+import {
+  Credentials,
+  UserProfile,
+  UserRequestRegister,
+  securityId,
+} from 'src/types';
 import { emailIsValid } from 'src/utils/validate';
-import { hashPassword } from 'src/utils/hash.password';
-import _ from 'lodash';
+import { comparePassword, hashPassword } from 'src/utils/hash.password';
+import _, { identity } from 'lodash';
 
 @Injectable()
 export class UserService {
@@ -81,7 +86,7 @@ export class UserService {
       },
     });
 
-    this.logger.log(`[createUSER] ${JSON.stringify(newUser)}`);
+    this.logger.log(`[createUser] ${JSON.stringify(newUser)}`);
 
     const getNewUsers = await this.prismaService.user.findFirst({
       where: { email },
@@ -103,6 +108,56 @@ export class UserService {
     return newUser;
   }
 
+  //LOGIN
+  async login(userCredentials: Credentials) {
+    const { email, password } = userCredentials;
+
+    const invalidCredentials = 'Invalid email or password';
+
+    this.logger.log(`[login] userCredentials email: ${email}`);
+
+    // Check valid of email
+    if (!emailIsValid(email)) {
+      throw new HttpException(invalidCredentials, HttpStatus.UNAUTHORIZED);
+    }
+
+    // found user
+    const user = await this.prismaService.user.findFirst({
+      where: { email: email },
+    });
+
+    if (!user) {
+      throw new HttpException(invalidCredentials, HttpStatus.UNAUTHORIZED);
+    }
+
+    const credentialFound = await this.prismaService.userCredentials.findFirst({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    this.logger.log(
+      `[login] credential found: ${JSON.stringify(credentialFound)}`,
+    );
+
+    if (!credentialFound) {
+      throw new HttpException(invalidCredentials, HttpStatus.UNAUTHORIZED);
+    }
+
+    const passwordMatched = await comparePassword(
+      password,
+      credentialFound.password,
+    );
+
+    if (!passwordMatched) {
+      throw new HttpException(invalidCredentials, HttpStatus.UNAUTHORIZED);
+    }
+
+    this.logger.log(`[login], user: ${JSON.stringify(user)}`)
+    
+    return user;
+  }
+
   // UPDATE USER
   async updateUser(params: {
     where: Prisma.UserWhereUniqueInput;
@@ -120,5 +175,22 @@ export class UserService {
     return this.prismaService.user.delete({
       where,
     });
+  }
+
+  // CONVERT TO USER PROFILE
+  convertToUserProfile(user: User): UserProfile {
+    this.logger.log(`[convertToUserProfile], user: ${JSON.stringify(user)}`);
+   
+    const { email, firstName, lastName, id } = user;
+    
+    const userProfile: UserProfile = {
+      [securityId] : id.toString(),
+      email,
+      firstName,
+      lastName,
+    }
+
+    return userProfile
+         
   }
 }
