@@ -11,4 +11,5 @@ export class UserController {
     const users = await this.userService.getUsers(params);
     return users;
   }
+
 }

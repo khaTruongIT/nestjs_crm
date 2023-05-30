@@ -13,7 +13,6 @@ export const uppercasedLogLevel = format((info) => {
 });
 
 export const messageLogFormat = format.printf((info) => {
-  // console.log('info', info);
   return `[${info.timestamp}] [${info.level}] - ${info.message}`;
 });
 

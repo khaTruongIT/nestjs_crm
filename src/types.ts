@@ -14,12 +14,16 @@ export interface Principal {
   /**
    * Name/id
    */
-  [securityId]: string;
   [attribute: string]: any;
 }
-
 export interface UserProfile extends Principal {
+  id: number
   email: string;
   firstName: string;
   lastName: string;
 }
+
+// export interface UserProfile extends Principal {
+//   email?: string;
+//   name?: string;
+// }

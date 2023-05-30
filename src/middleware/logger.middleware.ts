@@ -121,8 +121,7 @@ export class LoggerMiddleware implements NestMiddleware {
 
     this.logger.log(
       'info',
-      `{
-      [REQUEST] method: ${method}, url:  ${url}, body: ${JSON.stringify(body)}`,
+      `[REQUEST] method: ${method}, url:  ${url}, body: ${JSON.stringify(body)}`,
     );
 
     // GET response log

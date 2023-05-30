@@ -10,10 +10,14 @@ import {
 import { emailIsValid } from 'src/utils/validate';
 import { comparePassword, hashPassword } from 'src/utils/hash.password';
 import _, { identity } from 'lodash';
+import { CustomLogger } from 'src/logger/logger.service';
+import { getWinstonLogger } from 'src/logger/winston-config';
+
+const logger = getWinstonLogger();
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
+  // private readonly logger = new Logger(UserService.name);
 
   constructor(private prismaService: PrismaService) {}
 
@@ -26,7 +30,7 @@ export class UserService {
     orderBy?: Prisma.UserOrderByWithRelationInput;
   }): Promise<User[]> {
     const { skip, take, cursor, where, orderBy } = params;
-    this.logger.log(`[users], ${JSON.stringify(params)}`);
+    logger.info(`[users], ${JSON.stringify(params)}`);
     const users = await this.prismaService.user.findMany({
       skip,
       take,
@@ -34,13 +38,13 @@ export class UserService {
       where,
       orderBy,
     });
-    this.logger.log(`[users], ${JSON.stringify(users)}`);
+    logger.info(`[users], ${JSON.stringify(users)}`);
     return users;
   }
 
   //CREATE USER
   async createUser(data: UserRequestRegister): Promise<User> {
-    this.logger.log(`[createUser] data: ${JSON.stringify(data)}`);
+    logger.info(`[createUser] data: ${JSON.stringify(data)}`);
 
     const { password, email, firstName, lastName } = data;
 
@@ -76,7 +80,7 @@ export class UserService {
 
     // encrypt the password
     const newPassword = await hashPassword(password);
-    this.logger.log(`[createUser] password: ${newPassword}`);
+    logger.info(`[createUser] password: ${newPassword}`);
 
     const newUser = await this.prismaService.user.create({
       data: {
@@ -86,13 +90,13 @@ export class UserService {
       },
     });
 
-    this.logger.log(`[createUser] ${JSON.stringify(newUser)}`);
+    logger.warn(`[createUser] ${JSON.stringify(newUser)}`);
 
     const getNewUsers = await this.prismaService.user.findFirst({
       where: { email },
     });
 
-    this.logger.log(`[createUser] newUser: ${JSON.stringify(getNewUsers)}`);
+    logger.info(`[createUser] newUser: ${JSON.stringify(getNewUsers)}`);
 
     const userCredentials = await this.prismaService.userCredentials.create({
       data: {
@@ -101,7 +105,7 @@ export class UserService {
       },
     });
 
-    this.logger.log(
+    logger.info(
       `[createUser] userCredentials: ${JSON.stringify(userCredentials)}`,
     );
 
@@ -114,7 +118,7 @@ export class UserService {
 
     const invalidCredentials = 'Invalid email or password';
 
-    this.logger.log(`[login] userCredentials email: ${email}`);
+    logger.warn(`[login] userCredentials email: ${email}`);
 
     // Check valid of email
     if (!emailIsValid(email)) {
@@ -136,7 +140,7 @@ export class UserService {
       },
     });
 
-    this.logger.log(
+    logger.warn(
       `[login] credential found: ${JSON.stringify(credentialFound)}`,
     );
 
@@ -149,12 +153,13 @@ export class UserService {
       credentialFound.password,
     );
 
+
     if (!passwordMatched) {
       throw new HttpException(invalidCredentials, HttpStatus.UNAUTHORIZED);
     }
 
-    this.logger.log(`[login], user: ${JSON.stringify(user)}`)
-    
+    logger.warn(`[login], user: ${JSON.stringify(user)}`);
+
     return user;
   }
 
@@ -179,18 +184,38 @@ export class UserService {
 
   // CONVERT TO USER PROFILE
   convertToUserProfile(user: User): UserProfile {
-    this.logger.log(`[convertToUserProfile], user: ${JSON.stringify(user)}`);
-   
+    logger.info(`[convertToUserProfile], user: ${JSON.stringify(user)}`);
+
     const { email, firstName, lastName, id } = user;
-    
+
     const userProfile: UserProfile = {
-      [securityId] : id.toString(),
+      id,
       email,
       firstName,
       lastName,
-    }
+    };
 
-    return userProfile
-         
+    logger.info(
+      `[convertToUserProfile], userProfile: ${JSON.stringify(userProfile)}`,
+    );
+
+    return userProfile;
+  }
+
+  // findOneUser
+  async findOneUser(userEmail: string): Promise<User> {
+    try {
+      logger.info(`[convertToUserProfile], userEmail: ${userEmail}`);
+      // CHECK VALID EMAIL
+      const user = await this.prismaService.user.findFirst({
+        where: {
+          email: userEmail,
+        },
+      });
+      return user;
+    } catch (err) {
+      logger.info(`[findOneUser] error: ${JSON.stringify(err)}`);
+      return err;
+    }
   }
 }

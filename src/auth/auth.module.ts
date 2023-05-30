@@ -6,6 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UserModule } from 'src/user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { TokenConstants } from 'src/user/constants';
+import { LoggerModule } from 'src/logger/logger.module';
 
 @Module({
   controllers: [AuthController],
@@ -17,6 +18,7 @@ import { TokenConstants } from 'src/user/constants';
       secret: TokenConstants.TOKEN_SECRET_VALUE,
       signOptions: { expiresIn: TokenConstants.TOKEN_EXPIRES_IN_VALUE },
     }),
+    LoggerModule
   ],
 })
 export class AuthModule {}

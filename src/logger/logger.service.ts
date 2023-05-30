@@ -1,6 +1,6 @@
 import { LoggerService, Scope } from '@nestjs/common';
 // import * as winston from 'winston';
-import { Logger, createLogger, format, transports, config } from 'winston';
+import { Logger, createLogger, format, transports, config, level } from 'winston';
 import {
   WINSTON_LOGGER_OPTIONS,
   defaultLogFormat,
@@ -28,16 +28,17 @@ export class CustomLogger implements LoggerService {
       );
     }
   }
+  
 
   error(message: any, ...optionalParams: any[]) {
-    this.logger.error(`ERROR: ${message}`, optionalParams);
+    this.logger.log({level: 'error', message: ` ${message}`, optionalParams});
   }
 
   warn(message: any, ...optionalParams: any[]) {
-    this.logger.warn(`WARN: ${message}`, optionalParams);
+    this.logger.log({level: 'warn', message: ` ${message}`, optionalParams});
   }
 
   log(message: any, ...optionalParams: any[]) {
-    this.logger.log(`LOG: ${message}`, optionalParams);
+    this.logger.log({level: 'info', message: ` ${message}`, optionalParams});
   }
 }

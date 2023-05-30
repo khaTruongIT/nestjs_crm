@@ -1,15 +1,16 @@
 import { Logger, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { sign } from 'crypto';
+import { CustomLogger } from 'src/logger/logger.service';
 import { UserProfile, securityId } from 'src/types';
 import { TokenConstants } from 'src/user/constants';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
+  // private readonly logger = new Logger(AuthService.name);
 
-  constructor(private userService: UserService, private jwtService: JwtService) {}
+  constructor(private userService: UserService, private jwtService: JwtService, private logger: CustomLogger) {}
 
   // generate token
   async generateToken(userProfile: UserProfile) {
@@ -25,10 +26,9 @@ export class AuthService {
       );
     }
 
-    const { email, lastName, firstName } = userProfile;
+    const {id, email, lastName, firstName } = userProfile;
 
     const userProfileForToken = {
-      id: userProfile[securityId],
       email,
       name: `${firstName} ${lastName}`,
     };
