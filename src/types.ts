@@ -1,4 +1,5 @@
 import { User, Prisma } from '@prisma/client';
+import { IsEmail, IsNotEmpty } from 'class-validator';
 
 export interface UserRequestRegister extends Prisma.UserCreateInput {
   password: string;

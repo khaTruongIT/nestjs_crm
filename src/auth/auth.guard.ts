@@ -7,7 +7,9 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { TokenConstants } from 'src/user/constants';
 import { Request } from 'express';
+import { getWinstonLogger } from 'src/logger/winston-config';
 
+const logger = getWinstonLogger()
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
@@ -23,6 +25,7 @@ export class AuthGuard implements CanActivate {
       const userProfile = this.jwtService.verifyAsync(token, {
         secret: TokenConstants.TOKEN_SECRET_VALUE,
       });
+      logger.info(`[canActive] user profile: ${JSON.stringify(userProfile)}`);
       request['user'] = userProfile;
     } catch (err) {
       throw new UnauthorizedException();

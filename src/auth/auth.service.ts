@@ -8,9 +8,11 @@ import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
-  // private readonly logger = new Logger(AuthService.name);
-
-  constructor(private userService: UserService, private jwtService: JwtService, private logger: CustomLogger) {}
+  constructor(
+    private userService: UserService,
+    private jwtService: JwtService,
+    private logger: CustomLogger,
+  ) {}
 
   // generate token
   async generateToken(userProfile: UserProfile) {
@@ -26,24 +28,23 @@ export class AuthService {
       );
     }
 
-    const {id, email, lastName, firstName } = userProfile;
+    const { id, email, lastName, firstName } = userProfile;
 
     const userProfileForToken = {
       email,
       name: `${firstName} ${lastName}`,
     };
     let token: string;
-   
-    try {
-      token = await this.jwtService.sign(userProfileForToken, {
-        secret: TokenConstants.TOKEN_SECRET_VALUE,
-        expiresIn: TokenConstants.TOKEN_EXPIRES_IN_VALUE
-      })
 
+    try {
+      token = this.jwtService.sign(userProfileForToken, {
+        secret: TokenConstants.TOKEN_SECRET_VALUE,
+        expiresIn: TokenConstants.TOKEN_EXPIRES_IN_VALUE,
+      });
     } catch (err) {
-      this.logger.error(`[generateToken] Error: ${JSON.stringify(err)}`)
-      return err
+      this.logger.error(`[generateToken] Error: ${JSON.stringify(err)}`);
+      return err;
     }
-    return token
+    return token;
   }
 }

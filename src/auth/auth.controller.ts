@@ -13,15 +13,15 @@ import { UserRequestRegister } from 'src/types';
 import { UserService } from 'src/user/user.service';
 import { AuthGuard } from './auth.guard';
 import { Credentials } from 'src/types';
+import { getWinstonLogger } from 'src/logger/winston-config';
 
+const logger = getWinstonLogger()
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
   constructor(private userService: UserService, private authService: AuthService) {}
 
   @Post('signup')
   async signup(@Body() createUserDto: UserRequestRegister) {
-    this.logger.log(`[SIGNUP], Start SIGN UP`);
     return this.userService.createUser(createUserDto);
   }
 
@@ -30,7 +30,7 @@ export class AuthController {
   async login(@Body() signInDto: Credentials) {
     const user = await this.userService.login(signInDto)
     const userProfile = await this.userService.convertToUserProfile(user)
-    this.logger.log(`[login] userProfile: ${JSON.stringify(userProfile)}`)
+    logger.info(`[login] userProfile: ${JSON.stringify(userProfile)}`)
     const token = await this.authService.generateToken(userProfile)
     return {
       token, 

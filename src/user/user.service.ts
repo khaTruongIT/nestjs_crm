@@ -12,13 +12,12 @@ import { comparePassword, hashPassword } from 'src/utils/hash.password';
 import _, { identity } from 'lodash';
 import { CustomLogger } from 'src/logger/logger.service';
 import { getWinstonLogger } from 'src/logger/winston-config';
+import { CreateUserDto } from './dto/create-user.dto';
 
 const logger = getWinstonLogger();
 
 @Injectable()
 export class UserService {
-  // private readonly logger = new Logger(UserService.name);
-
   constructor(private prismaService: PrismaService) {}
 
   //GET USERS
@@ -43,7 +42,7 @@ export class UserService {
   }
 
   //CREATE USER
-  async createUser(data: UserRequestRegister): Promise<User> {
+  async createUser(data: CreateUserDto): Promise<User> {
     logger.info(`[createUser] data: ${JSON.stringify(data)}`);
 
     const { password, email, firstName, lastName } = data;
@@ -140,9 +139,7 @@ export class UserService {
       },
     });
 
-    logger.warn(
-      `[login] credential found: ${JSON.stringify(credentialFound)}`,
-    );
+    logger.warn(`[login] credential found: ${JSON.stringify(credentialFound)}`);
 
     if (!credentialFound) {
       throw new HttpException(invalidCredentials, HttpStatus.UNAUTHORIZED);
@@ -152,7 +149,6 @@ export class UserService {
       password,
       credentialFound.password,
     );
-
 
     if (!passwordMatched) {
       throw new HttpException(invalidCredentials, HttpStatus.UNAUTHORIZED);
@@ -206,7 +202,6 @@ export class UserService {
   async findOneUser(userEmail: string): Promise<User> {
     try {
       logger.info(`[convertToUserProfile], userEmail: ${userEmail}`);
-      // CHECK VALID EMAIL
       const user = await this.prismaService.user.findFirst({
         where: {
           email: userEmail,
@@ -214,7 +209,7 @@ export class UserService {
       });
       return user;
     } catch (err) {
-      logger.info(`[findOneUser] error: ${JSON.stringify(err)}`);
+      logger.error(`[findOneUser] error: ${JSON.stringify(err)}`);
       return err;
     }
   }
